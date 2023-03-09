@@ -1,0 +1,13 @@
+/__pycache__/
+__pycache__/
+migrations/
+
+.env
+.pyc
+.pyo
+
+venv/
+.idea/
+.git/
+
+db.sqlite3
