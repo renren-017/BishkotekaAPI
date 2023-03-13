@@ -5,7 +5,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from .models import Customer, Organization, OrganizationType
+from .models import Customer, Organization
 
 
 User = get_user_model()
@@ -46,6 +46,7 @@ class CustomerSignUpSerializer(serializers.Serializer):
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     date_of_birth = serializers.DateField()
+    interests_ids = serializers.ListField()
 
     def create(self, validated_data):
         User = get_user_model()
@@ -62,6 +63,7 @@ class CustomerSignUpSerializer(serializers.Serializer):
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             date_of_birth=validated_data['date_of_birth'],
+            interests_ids=validated_data['interests_ids']
         )
         return user
 
@@ -83,7 +85,7 @@ class OrganizationSignUpSerializer(serializers.Serializer):
     password2 = serializers.CharField(write_only=True)
     name = serializers.CharField(max_length=100)
     description = serializers.CharField(max_length=1500)
-    type = serializers.PrimaryKeyRelatedField(queryset=OrganizationType.objects.all())
+    type = serializers.CharField(max_length=100)
 
     def create(self, validated_data):
         User = get_user_model()

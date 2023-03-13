@@ -22,9 +22,11 @@ INSTALLED_APPS = [
 
     # local
     'users',
+    "events",
     
     # third_party
     'drf_spectacular',
+    'multiselectfield',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -137,3 +139,8 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
 EMAIL_PORT = os.getenv('EMAIL_PORT')
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+
+# google
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+

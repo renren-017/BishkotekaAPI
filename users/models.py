@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.contrib.postgres.fields import ArrayField
 
 from users.managers import CustomUserManager
 
@@ -20,7 +21,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     def __str__(self):
-        return self.email
+        return self.customer.username if hasattr(self, 'customer') else self.organization.name
 
     def generate_verification_token(self):
         token = make_password(f"{self.email}-{self.date_joined}")
@@ -36,23 +37,25 @@ class Customer(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     date_of_birth = models.DateField()
+    interests_ids = ArrayField(models.IntegerField(), blank=True)
 
     def __str__(self):
         return self.username
-
-
-class OrganizationType(models.Model):
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
 
 
 class Organization(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
     name = models.CharField(max_length=100)
     description = models.TextField(max_length=1500)
-    type = models.ForeignKey(to=OrganizationType, on_delete=models.CASCADE, related_name="organizations")
+    type = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    address = models.CharField(max_length=200)
+    insta_link = models.URLField()
 
     def __str__(self):
         return self.name
+
+
+class Following(models.Model):
+    follower = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE, related_name="following")
+    following = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE, related_name="followers")

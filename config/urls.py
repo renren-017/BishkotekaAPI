@@ -13,6 +13,7 @@ class SimpleView(APIView):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('users.urls')),
+    path('events/', include('events.urls')),
 
     # Simple JWT
     path('accounts/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

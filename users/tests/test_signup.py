@@ -1,14 +1,17 @@
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from users.models import CustomUser, Customer, Organization, OrganizationType
+
+from users.models import CustomUser, Customer, Organization
+from events.models import Category
 
 
 class RegistrationTests(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.type = OrganizationType.objects.create(name='Children')
+        Category.objects.create(title='Charity')
+        Category.objects.create(title='Some other charity')
 
     def test_customer_registration(self):
         """
@@ -22,8 +25,10 @@ class RegistrationTests(APITestCase):
             'password2': 'testpassword1',
             'first_name': 'John',
             'last_name': 'Doe',
-            'date_of_birth': '1990-01-01'
+            'date_of_birth': '1990-01-01',
+            'interests_ids': [1, 2]
         }
+
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(CustomUser.objects.count(), 1)
@@ -42,7 +47,7 @@ class RegistrationTests(APITestCase):
             'password2': 'testpassword1',
             'name': 'Test Organization',
             'description': 'Test description',
-            'type': 1
+            'type': 'Charity'
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
