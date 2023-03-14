@@ -1,8 +1,10 @@
+from abc import ABC
+
 from rest_framework import serializers
 from events.models import OneTimeEvent, EventCategory, EventComment, EventInterest, EventPromotion, RegularEvent
 
 
-class UnixTimestampField(serializers.Field):
+class UnixTimestampField(serializers.Field, ABC):
     def to_representation(self, value):
         return int(value.timestamp())
 
@@ -66,7 +68,17 @@ class RegularEventSerializer(serializers.ModelSerializer):
     promotions = EventPromotionSerializer(many=True, read_only=True)
     organization = serializers.StringRelatedField()
     occurrence_days = serializers.StringRelatedField()
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
 
     class Meta:
         model = RegularEvent
         fields = ('id', 'moderation_status', 'title', 'description', 'price', 'organization', 'location', 'entry', 'occurrence_days', 'start_time', 'end_time', 'categories', 'comments', 'interested', 'promotions')
+
+    @staticmethod
+    def get_start_time(obj):
+        return obj.start_time.strftime('%H:%M')
+
+    @staticmethod
+    def get_end_time(obj):
+        return obj.end_time.strftime('%H:%M')
