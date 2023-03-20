@@ -21,7 +21,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     def __str__(self):
-        return self.customer.username if hasattr(self, 'customer') else self.organization.name
+        return self.email
 
     def generate_verification_token(self):
         token = make_password(f"{self.email}-{self.date_joined}")
@@ -37,20 +37,25 @@ class Customer(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     date_of_birth = models.DateField()
-    interests_ids = ArrayField(models.IntegerField(), blank=True)
+    interests_ids = ArrayField(models.IntegerField(), blank=True, null=True)
 
     def __str__(self):
         return self.username
 
+    @property
+    def interests(self):
+        from events.models import Category
+        return Category.objects.filter(id__in=self.interests_ids)
+
 
 class Organization(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     description = models.TextField(max_length=1500)
     type = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
-    address = models.CharField(max_length=200)
-    insta_link = models.URLField()
+    address = models.CharField(max_length=200, blank=True, null=True)
+    insta_link = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return self.name

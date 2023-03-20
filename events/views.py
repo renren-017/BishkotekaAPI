@@ -1,17 +1,19 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-from events.models import OneTimeEvent, RegularEvent
-from events.serializers import OneTimeEventSerializer, RegularEventSerializer
+from events.models import OneTimeEvent, RegularEvent, Category
+from events.serializers import OneTimeEventSerializer, RegularEventSerializer, CategorySerializer
 from utils.db.queries import get_events
 
 
 class EventAPIView(APIView):
     serializer_class = OneTimeEventSerializer
     pagination_class = LimitOffsetPagination
+    permission_classes = (IsAuthenticated,)
     model = OneTimeEvent
 
     @extend_schema(
@@ -24,6 +26,7 @@ class EventAPIView(APIView):
         ]
     )
     def get(self, request):
+        self.check_permissions(request)
         paginator = self.pagination_class()
         search_keyword = request.query_params.get('keyword')
         category = request.query_params.get('category')
@@ -43,3 +46,18 @@ class OneTimeEventAPIView(EventAPIView):
 class RegularEventAPIView(EventAPIView):
     serializer_class = RegularEventSerializer
     model = RegularEvent
+
+
+class CategoryAPIView(APIView):
+    serializer_class = CategorySerializer
+    model = Category
+
+    @extend_schema(
+        responses=CategorySerializer(many=True)
+    )
+    def get(self, request):
+        categories = Category.objects.all()
+        serializer = self.serializer_class(data=categories, many=True)
+        if serializer.is_valid():
+            return Response(serializer.data, status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data, status.HTTP_200_OK)

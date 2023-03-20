@@ -1,7 +1,8 @@
 from abc import ABC
 
 from rest_framework import serializers
-from events.models import OneTimeEvent, EventCategory, EventComment, EventInterest, EventPromotion, RegularEvent
+from events.models import OneTimeEvent, EventCategory, EventComment, EventInterest, EventPromotion, RegularEvent, \
+    Category
 
 
 class UnixTimestampField(serializers.Field, ABC):
@@ -82,3 +83,9 @@ class RegularEventSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_end_time(obj):
         return obj.end_time.strftime('%H:%M')
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('id', 'title')

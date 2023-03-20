@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from pathlib import Path
 from dotenv import load_dotenv
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     "events",
     
     # third_party
+    'storages',
     'drf_spectacular',
     'multiselectfield',
     'rest_framework',
@@ -114,6 +116,12 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=5),
+}
+
+
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -144,7 +152,10 @@ EMAIL_PORT = os.getenv('EMAIL_PORT')
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STORAGES = {"default": "storages.backends.s3boto3.S3Boto3Storage"}
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+STORAGES = {"staticfiles": "storages.backends.s3boto3.S3StaticStorage"}
 
-# google
-GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
-
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+MEDIA_URL = '/media/'

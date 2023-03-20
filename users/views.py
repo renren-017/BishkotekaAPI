@@ -5,9 +5,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from users.models import Customer, Organization
-from users.serializers import CustomerSignUpSerializer, OrganizationSignUpSerializer, EmailVerificationSerializer, CustomerSerializer, OrganizationSerializer
+from users.serializers import CustomerSignUpSerializer, OrganizationSignUpSerializer, EmailVerificationSerializer, \
+    CustomerSerializer, OrganizationSerializer, CustomerTokenObtainPairSerializer, \
+    OrganizationTokenObtainPairSerializer, OrganizationCreatedSerializer, CustomerCreatedSerializer
 from config import settings
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
 
@@ -16,23 +19,30 @@ User = get_user_model()
 
 class CustomerSignUpView(APIView):
     @extend_schema(
-        request=CustomerSignUpSerializer)
+        request=CustomerSignUpSerializer,
+        responses=CustomerCreatedSerializer)
     def post(self, request):
         serializer = CustomerSignUpSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            return Response({"email": user.email}, status=status.HTTP_201_CREATED)
+            customer = serializer.save()
+            return Response({"email": customer.user.email,
+                             "username": customer.username,
+                             "first_name": customer.first_name,
+                             "last_name": customer.last_name},
+                            status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class OrganizationSignUpView(APIView):
     @extend_schema(
-        request=OrganizationSignUpSerializer)
+        request=OrganizationSignUpSerializer,
+        responses=OrganizationCreatedSerializer)
     def post(self, request):
         serializer = OrganizationSignUpSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            return Response({"Details": f"Account for {user.name} successfully created. Check your email inbox to verify your account"},
+            organization = serializer.save(user_id=request.user.id)
+            return Response({"user": organization.user.email,
+                             "organization_name": organization.name},
                             status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -88,9 +98,9 @@ class VerifyEmailView(APIView):
 
 class CustomerProfileView(APIView):
     @extend_schema(responses=CustomerSerializer)
-    def get(self, request, pk):
+    def get(self, request):
         try:
-            customer = Customer.objects.get(pk=pk)
+            customer = Customer.objects.get(pk=request.user.id)
         except Customer.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -100,11 +110,41 @@ class CustomerProfileView(APIView):
 
 class OrganizationProfileView(APIView):
     @extend_schema(responses=OrganizationSerializer)
-    def get(self, request, pk):
+    def get(self, request):
         try:
-            organization = Organization.objects.get(pk=pk)
+            organization = Organization.objects.get(pk=request.user.id)
         except Organization.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         serializer = OrganizationSerializer(organization)
         return Response(serializer.data)
+
+
+class CustomerTokenObtainPairView(TokenObtainPairView):
+    @extend_schema(request=CustomerTokenObtainPairSerializer)
+    def post(self, request, *args, **kwargs):
+        if 'username' in request.data:
+            request_serializer = CustomerTokenObtainPairSerializer(data=request.data)
+        else:
+            return Response({'error': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request_serializer.is_valid():
+            token_data = request_serializer.validated_data
+            return Response(token_data, status=status.HTTP_200_OK)
+
+        return Response(request_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OrganizationTokenObtainPairView(TokenObtainPairView):
+    @extend_schema(request=OrganizationTokenObtainPairSerializer)
+    def post(self, request, *args, **kwargs):
+        if 'name' in request.data:
+            request_serializer = OrganizationTokenObtainPairSerializer(data=request.data)
+        else:
+            return Response({'error': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request_serializer.is_valid():
+            token_data = request_serializer.validated_data
+            return Response(token_data, status=status.HTTP_200_OK)
+
+        return Response(request_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
