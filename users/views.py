@@ -1,7 +1,15 @@
-from django.core.mail import send_mail
+from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes
+from django.utils.html import strip_tags
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from rest_framework.generics import RetrieveAPIView
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from django.contrib.auth import get_user_model
@@ -10,7 +18,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from users.models import Customer, Organization
 from users.serializers import CustomerSignUpSerializer, OrganizationSignUpSerializer, EmailVerificationSerializer, \
     CustomerSerializer, OrganizationSerializer, CustomerTokenObtainPairSerializer, \
-    OrganizationTokenObtainPairSerializer, OrganizationCreatedSerializer, CustomerCreatedSerializer
+    OrganizationTokenObtainPairSerializer, OrganizationCreatedSerializer, CustomerCreatedSerializer, \
+    PasswordResetConfirmSerializer, PasswordResetSerializer
 from config import settings
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
 
@@ -148,3 +157,68 @@ class OrganizationTokenObtainPairView(TokenObtainPairView):
             return Response(token_data, status=status.HTTP_200_OK)
 
         return Response(request_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = PasswordResetSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        token_generator = default_token_generator
+        reset_url = f'{request.scheme}://{request.get_host()}/api/password_reset/confirm/?uidb64={uidb64}&token={token_generator.make_token(user)}'
+        subject = 'Password reset for your account'
+        html_message = render_to_string('email/password_reset_email.html', {
+            'user': user.email,
+            'reset_url': reset_url,
+        })
+        plain_message = strip_tags(html_message)
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [user.email]
+
+        email = EmailMultiAlternatives(
+            subject,
+            plain_message,
+            from_email,
+            recipient_list,
+        )
+
+        email.content_subtype = "html"
+        email.attach_alternative(html_message, 'text/html')
+        email.send()
+
+        return Response({'detail': 'Password reset email has been sent.'}, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = PasswordResetConfirmSerializer
+
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        uidb64 = serializer.validated_data['uidb64']
+        token = serializer.validated_data['token']
+        new_password1 = serializer.validated_data['new_password1']
+        new_password2 = serializer.validated_data['new_password2']
+
+        try:
+            uid = int(urlsafe_base64_decode(uidb64).decode('utf-8'))
+            user = User.objects.get(pk=uid)
+            token_generator = default_token_generator
+            if not token_generator.check_token(user, token):
+                raise ObjectDoesNotExist
+        except (TypeError, ValueError, OverflowError, ObjectDoesNotExist, ValidationError):
+            return Response({'detail': 'Invalid password reset link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        form = SetPasswordForm(user, {'new_password1': new_password1, 'new_password2': new_password2})
+        if form.is_valid():
+            form.save()
+            return Response({'detail': 'Password has been reset.'}, status=status.HTTP_200_OK)
+        return Response({'detail': 'Something went form with the form, try again.'}, status=status.HTTP_400_BAD_REQUEST)
