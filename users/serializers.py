@@ -1,3 +1,6 @@
+from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -228,3 +231,67 @@ class OrganizationTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
         return data
+
+
+class CustomPasswordResetForm:
+    pass
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        user = User.objects.filter(email=value).first()
+        if not user:
+            raise serializers.ValidationError('No user found with this email address.')
+        return value
+
+    def save(self):
+        email = self.validated_data['email']
+        user = User.objects.get(email=email)
+        token_generator = default_token_generator
+        use_https = True
+        request = self.context.get('request')
+        reset_form = CustomPasswordResetForm({'email': email})
+        if reset_form.is_valid():
+            reset_form.save(
+                use_https=use_https,
+                token_generator=token_generator,
+                request=request,
+            )
+        return user
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uidb64 = serializers.CharField()
+    token = serializers.CharField()
+    new_password1 = serializers.CharField(
+        style={'input_type': 'password'},
+        write_only=True
+    )
+    new_password2 = serializers.CharField(
+        style={'input_type': 'password'},
+        write_only=True
+    )
+
+    def validate(self, attrs):
+        uidb64 = attrs.get('uidb64')
+        token = attrs.get('token')
+        new_password1 = attrs.get('new_password1')
+        new_password2 = attrs.get('new_password2')
+
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError('Invalid password reset link.')
+
+        if not default_token_generator.check_token(user, token):
+            raise serializers.ValidationError('Invalid password reset link.')
+
+        form = SetPasswordForm(user.email, {'new_password1': new_password1, 'new_password2': new_password2})
+        if not form.is_valid():
+            raise serializers.ValidationError(form.errors.as_json())
+
+        attrs['user'] = user
+        return attrs

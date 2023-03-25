@@ -39,9 +39,6 @@ CORS_ALLOWED_ORIGINS = [
     "https://sub.example.com",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
-    "https://d703-212-42-113-145.ngrok.io",
-    "http://d703-212-42-113-145.ngrok.io",
-    "https://d703-212-42-113-145.ngrok.io:8000"
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
@@ -153,9 +150,13 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STORAGES = {"default": "storages.backends.s3boto3.S3Boto3Storage"}
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
-STORAGES = {"staticfiles": "storages.backends.s3boto3.S3StaticStorage"}
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 MEDIA_URL = '/media/'
+
+AWS_DEFAULT_ACL = None
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazoneaws.com' % AWS_STORAGE_BUCKET_NAME
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')

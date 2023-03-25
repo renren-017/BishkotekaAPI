@@ -55,6 +55,11 @@ class Event(models.Model):
         return self.title
 
 
+class EventImage(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='images/')
+
+
 class OneTimeEvent(Event):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
