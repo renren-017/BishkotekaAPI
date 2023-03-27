@@ -10,6 +10,7 @@ from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework import status, generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from django.contrib.auth import get_user_model
@@ -43,10 +44,13 @@ class CustomerSignUpView(APIView):
 
 
 class OrganizationSignUpView(APIView):
+    permission_classes = (IsAuthenticated,)
+
     @extend_schema(
         request=OrganizationSignUpSerializer,
         responses=OrganizationCreatedSerializer)
     def post(self, request):
+        self.check_permissions(request)
         serializer = OrganizationSignUpSerializer(data=request.data)
         if serializer.is_valid():
             organization = serializer.save(user_id=request.user.id)
@@ -118,14 +122,17 @@ class CustomerProfileView(APIView):
 
 
 class OrganizationProfileView(APIView):
+    permission_classes = (IsAuthenticated,)
+
     @extend_schema(responses=OrganizationSerializer)
     def get(self, request):
+        self.check_permissions(request)
         try:
-            organization = Organization.objects.get(pk=request.user.id)
+            organizations = Organization.objects.filter(user=request.user)
         except Organization.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = OrganizationSerializer(organization)
+        serializer = OrganizationSerializer(organizations, many=True)
         return Response(serializer.data)
 
 
