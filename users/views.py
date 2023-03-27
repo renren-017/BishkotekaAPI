@@ -205,15 +205,14 @@ class PasswordResetConfirmView(generics.GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = PasswordResetConfirmSerializer
 
-
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        uidb64 = serializer.validated_data['uidb64']
-        token = serializer.validated_data['token']
         new_password1 = serializer.validated_data['new_password1']
         new_password2 = serializer.validated_data['new_password2']
+        uidb64 = kwargs['uidb64']
+        token = kwargs['token']
 
         try:
             uid = int(urlsafe_base64_decode(uidb64).decode('utf-8'))
