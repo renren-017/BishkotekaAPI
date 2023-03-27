@@ -6,7 +6,8 @@ from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from events.models import OneTimeEvent, RegularEvent, Category
-from events.serializers import OneTimeEventSerializer, RegularEventSerializer, CategorySerializer
+from events.serializers import OneTimeEventSerializer, RegularEventSerializer, CategorySerializer, \
+    EventCommentSerializer
 from utils.db.queries import get_events
 
 
@@ -61,3 +62,10 @@ class CategoryAPIView(APIView):
         if serializer.is_valid():
             return Response(serializer.data, status.HTTP_400_BAD_REQUEST)
         return Response(serializer.data, status.HTTP_200_OK)
+
+
+class CommentCreateView(APIView):
+
+    def post(self):
+        serializer = EventCommentSerializer()
+

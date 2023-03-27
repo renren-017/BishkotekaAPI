@@ -59,7 +59,8 @@ class OneTimeEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OneTimeEvent
-        fields = ('id', 'moderation_status', 'title', 'description', 'price', 'organization', 'location', 'entry', 'start_time', 'end_time', 'categories', 'comments', 'interested', 'promotions')
+        fields = ('id', 'moderation_status', 'title', 'description', 'price', 'organization', 'location', 'entry',
+                  'start_time', 'end_time', 'categories', 'comments', 'interested', 'promotions')
 
 
 class RegularEventSerializer(serializers.ModelSerializer):
@@ -74,7 +75,8 @@ class RegularEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RegularEvent
-        fields = ('id', 'moderation_status', 'title', 'description', 'price', 'organization', 'location', 'entry', 'occurrence_days', 'start_time', 'end_time', 'categories', 'comments', 'interested', 'promotions')
+        fields = ('id', 'moderation_status', 'title', 'description', 'price', 'organization', 'location', 'entry',
+                  'occurrence_days', 'start_time', 'end_time', 'categories', 'comments', 'interested', 'promotions')
 
     @staticmethod
     def get_start_time(obj):
