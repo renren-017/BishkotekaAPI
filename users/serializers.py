@@ -1,4 +1,4 @@
-from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.forms import SetPasswordForm, PasswordResetForm
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
@@ -233,9 +233,10 @@ class OrganizationTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
-class CustomPasswordResetForm:
-    pass
-
+class CustomPasswordResetForm(PasswordResetForm):
+    def send_mail(self, subject_template_name, email_template_name,
+                  context, from_email, to_email, html_email_template_name=None):
+        pass
 
 class PasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -263,8 +264,7 @@ class PasswordResetSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    uidb64 = serializers.CharField()
-    token = serializers.CharField()
+
     new_password1 = serializers.CharField(
         style={'input_type': 'password'},
         write_only=True
@@ -274,24 +274,3 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         write_only=True
     )
 
-    def validate(self, attrs):
-        uidb64 = attrs.get('uidb64')
-        token = attrs.get('token')
-        new_password1 = attrs.get('new_password1')
-        new_password2 = attrs.get('new_password2')
-
-        try:
-            uid = urlsafe_base64_decode(uidb64).decode()
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            raise serializers.ValidationError('Invalid password reset link.')
-
-        if not default_token_generator.check_token(user, token):
-            raise serializers.ValidationError('Invalid password reset link.')
-
-        form = SetPasswordForm(user.email, {'new_password1': new_password1, 'new_password2': new_password2})
-        if not form.is_valid():
-            raise serializers.ValidationError(form.errors.as_json())
-
-        attrs['user'] = user
-        return attrs
