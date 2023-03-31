@@ -14,7 +14,9 @@ def get_events(category, keyword, type: Event = OneTimeEvent):
     search_query = f"AND title ILIKE '%{keyword}%'" if keyword else ""
 
     if category:
-        cursor.execute(f"SELECT event_id FROM events_eventcategory WHERE category_id = {category}")
+        cursor.execute(
+            f"SELECT event_id FROM events_eventcategory WHERE category_id = {category}"
+        )
         objects_ids.intersection_update({objects[0] for objects in cursor.fetchall()})
 
     if not objects_ids:

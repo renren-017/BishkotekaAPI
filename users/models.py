@@ -34,7 +34,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 class Customer(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
     username = models.CharField(_("username"), max_length=100, unique=True)
-    avatar = models.ImageField(upload_to='user_avatars/', null=True, blank=True)
+    avatar = models.ImageField(upload_to="user_avatars/", null=True, blank=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     date_of_birth = models.DateField()
@@ -46,13 +46,14 @@ class Customer(models.Model):
     @property
     def interests(self):
         from events.models import Category
+
         return Category.objects.filter(id__in=self.interests_ids)
 
 
 class Organization(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    avatar = models.ImageField(upload_to='organization_avatars/', null=True, blank=True)
+    avatar = models.ImageField(upload_to="organization_avatars/", null=True, blank=True)
     description = models.TextField(max_length=1500)
     type = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
@@ -64,5 +65,9 @@ class Organization(models.Model):
 
 
 class Following(models.Model):
-    follower = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE, related_name="following")
-    following = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE, related_name="followers")
+    follower = models.ForeignKey(
+        to=CustomUser, on_delete=models.CASCADE, related_name="following"
+    )
+    following = models.ForeignKey(
+        to=CustomUser, on_delete=models.CASCADE, related_name="followers"
+    )

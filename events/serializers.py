@@ -1,8 +1,15 @@
 from abc import ABC
 
 from rest_framework import serializers
-from events.models import OneTimeEvent, EventCategory, EventComment, EventInterest, EventPromotion, RegularEvent, \
-    Category
+from events.models import (
+    OneTimeEvent,
+    EventCategory,
+    EventComment,
+    EventInterest,
+    EventPromotion,
+    RegularEvent,
+    Category,
+)
 
 
 class UnixTimestampField(serializers.Field, ABC):
@@ -15,7 +22,7 @@ class EventCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventComment
-        fields = ('user', 'text')
+        fields = ("user", "text")
 
 
 class EventInterestSerializer(serializers.ModelSerializer):
@@ -23,7 +30,7 @@ class EventInterestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventInterest
-        fields = ('user',)
+        fields = ("user",)
 
 
 class EventCategorySerializer(serializers.ModelSerializer):
@@ -31,13 +38,11 @@ class EventCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventCategory
-        fields = ('category',)
+        fields = ("category",)
 
     def to_representation(self, instance):
         category = instance.category
-        return {
-            'title': category.title
-        }
+        return {"title": category.title}
 
 
 class EventPromotionSerializer(serializers.ModelSerializer):
@@ -45,7 +50,7 @@ class EventPromotionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventPromotion
-        fields = ('promotion',)
+        fields = ("promotion",)
 
 
 class OneTimeEventSerializer(serializers.ModelSerializer):
@@ -59,8 +64,22 @@ class OneTimeEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OneTimeEvent
-        fields = ('id', 'moderation_status', 'title', 'description', 'price', 'organization', 'location', 'entry',
-                  'start_time', 'end_time', 'categories', 'comments', 'interested', 'promotions')
+        fields = (
+            "id",
+            "moderation_status",
+            "title",
+            "description",
+            "price",
+            "organization",
+            "location",
+            "entry",
+            "start_time",
+            "end_time",
+            "categories",
+            "comments",
+            "interested",
+            "promotions",
+        )
 
 
 class RegularEventSerializer(serializers.ModelSerializer):
@@ -75,19 +94,34 @@ class RegularEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RegularEvent
-        fields = ('id', 'moderation_status', 'title', 'description', 'price', 'organization', 'location', 'entry',
-                  'occurrence_days', 'start_time', 'end_time', 'categories', 'comments', 'interested', 'promotions')
+        fields = (
+            "id",
+            "moderation_status",
+            "title",
+            "description",
+            "price",
+            "organization",
+            "location",
+            "entry",
+            "occurrence_days",
+            "start_time",
+            "end_time",
+            "categories",
+            "comments",
+            "interested",
+            "promotions",
+        )
 
     @staticmethod
     def get_start_time(obj):
-        return obj.start_time.strftime('%H:%M')
+        return obj.start_time.strftime("%H:%M")
 
     @staticmethod
     def get_end_time(obj):
-        return obj.end_time.strftime('%H:%M')
+        return obj.end_time.strftime("%H:%M")
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ('id', 'title')
+        fields = ("id", "title")
