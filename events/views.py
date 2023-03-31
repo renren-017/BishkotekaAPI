@@ -6,8 +6,12 @@ from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from events.models import OneTimeEvent, RegularEvent, Category
-from events.serializers import OneTimeEventSerializer, RegularEventSerializer, CategorySerializer, \
-    EventCommentSerializer
+from events.serializers import (
+    OneTimeEventSerializer,
+    RegularEventSerializer,
+    CategorySerializer,
+    EventCommentSerializer,
+)
 from utils.db.queries import get_events
 
 
@@ -20,17 +24,17 @@ class EventAPIView(APIView):
     @extend_schema(
         responses=serializer_class(many=True),
         parameters=[
-            OpenApiParameter(name='limit', type=int),
-            OpenApiParameter(name='offset', type=int),
-            OpenApiParameter(name='keyword', type=str),
-            OpenApiParameter(name='category', type=int)
-        ]
+            OpenApiParameter(name="limit", type=int),
+            OpenApiParameter(name="offset", type=int),
+            OpenApiParameter(name="keyword", type=str),
+            OpenApiParameter(name="category", type=int),
+        ],
     )
     def get(self, request):
         self.check_permissions(request)
         paginator = self.pagination_class()
-        search_keyword = request.query_params.get('keyword')
-        category = request.query_params.get('category')
+        search_keyword = request.query_params.get("keyword")
+        category = request.query_params.get("category")
 
         events = get_events(category=category, keyword=search_keyword, type=self.model)
         result_page = paginator.paginate_queryset(queryset=events, request=request)
@@ -53,9 +57,7 @@ class CategoryAPIView(APIView):
     serializer_class = CategorySerializer
     model = Category
 
-    @extend_schema(
-        responses=CategorySerializer(many=True)
-    )
+    @extend_schema(responses=CategorySerializer(many=True))
     def get(self, request):
         categories = Category.objects.all()
         serializer = self.serializer_class(data=categories, many=True)
@@ -65,7 +67,5 @@ class CategoryAPIView(APIView):
 
 
 class CommentCreateView(APIView):
-
     def post(self):
         serializer = EventCommentSerializer()
-

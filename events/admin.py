@@ -1,5 +1,16 @@
 from django.contrib import admin
-from events.models import Event, OneTimeEvent, RegularEvent, EventCategory, EventComment, EventInterest, EventPromotion, PromotionType, Category, OccurrenceDays
+from events.models import (
+    Event,
+    OneTimeEvent,
+    RegularEvent,
+    EventCategory,
+    EventComment,
+    EventInterest,
+    EventPromotion,
+    PromotionType,
+    Category,
+    OccurrenceDays,
+)
 from django import forms
 
 

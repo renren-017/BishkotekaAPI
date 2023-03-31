@@ -13,32 +13,40 @@ class Category(models.Model):
 
 
 class OccurrenceDays(models.Model):
-    monday = models.BooleanField('понедельник', default=False)
-    tuesday = models.BooleanField('вторник', default=False)
-    wednesday = models.BooleanField('среда', default=False)
-    thursday = models.BooleanField('четверг', default=False)
-    friday = models.BooleanField('пятница', default=False)
-    saturday = models.BooleanField('суббота', default=False)
-    sunday = models.BooleanField('воскресенье', default=False)
+    monday = models.BooleanField("понедельник", default=False)
+    tuesday = models.BooleanField("вторник", default=False)
+    wednesday = models.BooleanField("среда", default=False)
+    thursday = models.BooleanField("четверг", default=False)
+    friday = models.BooleanField("пятница", default=False)
+    saturday = models.BooleanField("суббота", default=False)
+    sunday = models.BooleanField("воскресенье", default=False)
 
     def __str__(self):
         days = []
-        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+        for day in [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]:
             if getattr(self, day):
-                days.append(getattr(self._meta.get_field(day), 'verbose_name'))
-        return ', '.join(days)
+                days.append(getattr(self._meta.get_field(day), "verbose_name"))
+        return ", ".join(days)
 
 
 ENTRY_TYPE_CHOICES = (
-    ('свободный', 'Свободный'),
-    ('по приглашению', 'По приглашению'),
-    ('по регистрации', 'По регистрации')
+    ("свободный", "Свободный"),
+    ("по приглашению", "По приглашению"),
+    ("по регистрации", "По регистрации"),
 )
 
 MODERATION_STATUS_CHOICES = (
-    ('отменён', 'Отменён'),
-    ('на модерации', 'На модерации'),
-    ('модерация пройдена', 'Модерация пройдена')
+    ("отменён", "Отменён"),
+    ("на модерации", "На модерации"),
+    ("модерация пройдена", "Модерация пройдена"),
 )
 
 
@@ -46,18 +54,24 @@ class Event(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=1000)
     price = models.PositiveIntegerField()
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="events")
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="events"
+    )
     location = models.CharField(max_length=200)
-    entry = models.CharField(choices=ENTRY_TYPE_CHOICES, max_length=15, default='свободный')
-    moderation_status = models.CharField(choices=MODERATION_STATUS_CHOICES, max_length=20, default='на модерации')
+    entry = models.CharField(
+        choices=ENTRY_TYPE_CHOICES, max_length=15, default="свободный"
+    )
+    moderation_status = models.CharField(
+        choices=MODERATION_STATUS_CHOICES, max_length=20, default="на модерации"
+    )
 
     def __str__(self):
         return self.title
 
 
 class EventImage(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='images/')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to="images/")
 
 
 class OneTimeEvent(Event):
@@ -66,22 +80,33 @@ class OneTimeEvent(Event):
 
 
 class RegularEvent(Event):
-    occurrence_days = models.ForeignKey(OccurrenceDays, on_delete=models.SET_NULL, blank=True, null=True,
-                                        related_name="events")
+    occurrence_days = models.ForeignKey(
+        OccurrenceDays,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="events",
+    )
     start_time = models.TimeField()
     end_time = models.TimeField()
 
 
 class EventCategory(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='categories')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='events')
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="categories"
+    )
+    category = models.ForeignKey(
+        Category, on_delete=models.CASCADE, related_name="events"
+    )
 
     def __str__(self):
-        return f'{self.event.id} - {self.category.title}'
+        return f"{self.event.id} - {self.category.title}"
 
 
 class EventComment(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="comments"
+    )
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="comments")
     text = models.CharField(max_length=500)
 
@@ -90,11 +115,15 @@ class EventComment(models.Model):
 
 
 class EventInterest(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="interests")
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="interested")
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="interests"
+    )
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="interested"
+    )
 
     def __str__(self):
-        return f'{self.user.id} - {self.event.id}'
+        return f"{self.user.id} - {self.event.id}"
 
 
 class PromotionType(models.Model):
@@ -106,8 +135,12 @@ class PromotionType(models.Model):
 
 
 class EventPromotion(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="promotions")
-    promotion = models.ForeignKey(PromotionType, on_delete=models.CASCADE, related_name="events")
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="promotions"
+    )
+    promotion = models.ForeignKey(
+        PromotionType, on_delete=models.CASCADE, related_name="events"
+    )
 
     def __str__(self):
-        return f'{self.event.id} - {self.promotion.id}'
+        return f"{self.event.id} - {self.promotion.id}"
