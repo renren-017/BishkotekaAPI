@@ -10,3 +10,4 @@ venv/
 .git/
 
 db.sqlite3
+media/
