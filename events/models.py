@@ -53,7 +53,7 @@ MODERATION_STATUS_CHOICES = (
 class Event(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=1000)
-    price = models.PositiveIntegerField()
+    price = models.PositiveIntegerField(default=0)
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="events"
     )

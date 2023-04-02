@@ -1,24 +1,44 @@
+import json
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.parsers import JSONParser
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework.generics import CreateAPIView, RetrieveAPIView
+from rest_framework import viewsets, mixins
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 
-from events.models import OneTimeEvent, RegularEvent, Category
+from events.models import (
+    OneTimeEvent,
+    RegularEvent,
+    Category,
+    EventComment,
+    EventPromotion,
+    EventCategory,
+    EventImage,
+)
+from events.permissions import IsOwnerOrDenied
 from events.serializers import (
     OneTimeEventSerializer,
     RegularEventSerializer,
-    CategorySerializer,
     EventCommentSerializer,
+    OneTimeEventDetailSerializer,
+    RegularEventDetailSerializer,
+    CategorySerializer,
+    OneTimeEventCreateSerializer,
 )
+from users.models import Organization
 from utils.db.queries import get_events
 
 
 class EventAPIView(APIView):
     serializer_class = OneTimeEventSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsAuthenticated,)
     model = OneTimeEvent
 
     @extend_schema(
@@ -45,12 +65,12 @@ class EventAPIView(APIView):
 
 class OneTimeEventAPIView(EventAPIView):
     serializer_class = OneTimeEventSerializer
-    model = OneTimeEvent
+    queryset = OneTimeEvent.objects.filter(moderation_status="модерация пройдена")
 
 
 class RegularEventAPIView(EventAPIView):
     serializer_class = RegularEventSerializer
-    model = RegularEvent
+    queryset = RegularEvent.objects.filter(moderation_status="модерация пройдена")
 
 
 class CategoryAPIView(APIView):
@@ -66,6 +86,49 @@ class CategoryAPIView(APIView):
         return Response(serializer.data, status.HTTP_200_OK)
 
 
-class CommentCreateView(APIView):
-    def post(self):
-        serializer = EventCommentSerializer()
+class OneTimeEventDetailView(RetrieveAPIView):
+    serializer_class = OneTimeEventDetailSerializer
+    queryset = OneTimeEvent.objects.all()
+    lookup_url_kwarg = "pk"
+
+
+class RegularEventDetailView(RetrieveAPIView):
+    serializer_class = RegularEventDetailSerializer
+    queryset = RegularEvent.objects.all()
+    lookup_url_kwarg = "pk"
+
+
+class EventCommentCreateAPIView(CreateAPIView):
+    serializer_class = EventCommentSerializer
+    queryset = EventComment.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class OneTimeEventCreateView(CreateAPIView):
+    serializer_class = OneTimeEventCreateSerializer
+    queryset = OneTimeEvent.objects.all()
+    parser_classes = (MultiPartParser,)
+    permission_classes = (IsOwnerOrDenied,)
+
+    @extend_schema(request=OneTimeEventCreateSerializer)
+    def post(self, request, *args, **kwargs):
+        request.data._mutable = True
+
+        if request.data["images"] == "":
+            del request.data["images"]
+
+        if request.data["promotions"] == "":
+            del request.data["promotions"]
+
+        if request.data["categories"] == "":
+            del request.data["categories"]
+
+        return super().post(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save(
+            organization=Organization.objects.get(name=self.kwargs.get("name"))
+        )
