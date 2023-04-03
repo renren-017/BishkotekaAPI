@@ -7,6 +7,7 @@ from events.views import (
     OneTimeEventDetailView,
     RegularEventDetailView,
     OneTimeEventCreateView,
+    RegularEventCreateView,
 )
 
 urlpatterns = [
@@ -23,6 +24,15 @@ urlpatterns = [
         name="regular-events-detail",
     ),
     path("events/categories/", CategoryAPIView.as_view(), name="categories"),
-    path("events/comment/", EventCommentCreateAPIView.as_view(), name="comment-create"),
-    path("organization/<slug:name>/events/create/", OneTimeEventCreateView.as_view()),
+    path(
+        "events/<int:pk>/comment/",
+        EventCommentCreateAPIView.as_view(),
+        name="comment-create",
+    ),
+    path(
+        "organization/<int:pk>/events/onetime/create/", OneTimeEventCreateView.as_view()
+    ),
+    path(
+        "organization/<int:pk>/events/regular/create/", RegularEventCreateView.as_view()
+    ),
 ]

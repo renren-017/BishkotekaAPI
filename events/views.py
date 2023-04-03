@@ -21,6 +21,7 @@ from events.models import (
     EventPromotion,
     EventCategory,
     EventImage,
+    Event,
 )
 from events.permissions import IsOwnerOrDenied
 from events.serializers import (
@@ -31,6 +32,7 @@ from events.serializers import (
     RegularEventDetailSerializer,
     CategorySerializer,
     OneTimeEventCreateSerializer,
+    RegularEventCreateSerializer,
 )
 from users.models import Organization
 from utils.db.queries import get_events
@@ -104,10 +106,11 @@ class EventCommentCreateAPIView(CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        event = Event.objects.get(id=self.kwargs.get("pk"))
+        serializer.save(user=self.request.user, event=event)
 
 
-class OneTimeEventCreateView(CreateAPIView):
+class EventCreateView(CreateAPIView):
     serializer_class = OneTimeEventCreateSerializer
     queryset = OneTimeEvent.objects.all()
     parser_classes = (MultiPartParser,)
@@ -129,6 +132,26 @@ class OneTimeEventCreateView(CreateAPIView):
         return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save(
-            organization=Organization.objects.get(name=self.kwargs.get("name"))
-        )
+        serializer.save(organization=Organization.objects.get(id=self.kwargs.get("pk")))
+
+
+class OneTimeEventCreateView(EventCreateView):
+    serializer_class = OneTimeEventCreateSerializer
+    queryset = OneTimeEvent.objects.all()
+    parser_classes = (MultiPartParser,)
+    permission_classes = (IsOwnerOrDenied,)
+
+    @extend_schema(request=OneTimeEventCreateSerializer)
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+
+class RegularEventCreateView(EventCreateView):
+    serializer_class = RegularEventCreateSerializer
+    queryset = RegularEvent.objects.all()
+    parser_classes = (MultiPartParser,)
+    permission_classes = (IsOwnerOrDenied,)
+
+    @extend_schema(request=RegularEventCreateSerializer)
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)

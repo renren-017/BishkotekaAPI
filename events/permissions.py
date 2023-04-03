@@ -8,6 +8,6 @@ class IsOwnerOrDenied(BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        org_name = view.kwargs.get("name")
-        organization = get_object_or_404(Organization, name=org_name)
+        pk = view.kwargs.get("pk")
+        organization = get_object_or_404(Organization, id=pk)
         return organization.user == request.user

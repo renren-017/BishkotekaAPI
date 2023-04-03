@@ -14,6 +14,7 @@ from events.models import (
     PromotionType,
     EventImage,
     Event,
+    OccurrenceDays,
 )
 from users.models import Organization
 
@@ -32,10 +33,21 @@ class UnixTimestampField(serializers.Field, ABC):
 
 class EventCommentSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
+    event = serializers.StringRelatedField()
 
     class Meta:
         model = EventComment
         fields = ("user", "text", "event")
+
+    def create(self, validated_data):
+        if validated_data["event"].moderation_status != "модерация пройдена":
+            raise serializers.ValidationError(
+                {
+                    "Detail": "You are trying to comment on an event "
+                    "that has not passed moderation yet"
+                }
+            )
+        return super().create(validated_data)
 
 
 class EventCommentInlineSerializer(serializers.ModelSerializer):
@@ -230,7 +242,7 @@ class CategoryInlineSerializer:
         fields = ("title",)
 
 
-class OneTimeEventCreateSerializer(serializers.ModelSerializer):
+class EventCreateSerializer(serializers.ModelSerializer):
     promotions = serializers.ListField(
         child=serializers.CharField(), required=False, write_only=True
     )
@@ -243,12 +255,10 @@ class OneTimeEventCreateSerializer(serializers.ModelSerializer):
     categories = serializers.ListField(
         child=serializers.CharField(), required=False, write_only=True
     )
-    start_time = UnixTimestampField()
-    end_time = UnixTimestampField()
     organization = serializers.HiddenField(default=None, allow_null=True)
 
     class Meta:
-        model = OneTimeEvent
+        model = Event
         fields = (
             "id",
             "title",
@@ -256,8 +266,6 @@ class OneTimeEventCreateSerializer(serializers.ModelSerializer):
             "price",
             "location",
             "entry",
-            "start_time",
-            "end_time",
             "organization",
             "images",
             "categories",
@@ -290,20 +298,18 @@ class OneTimeEventCreateSerializer(serializers.ModelSerializer):
         categories_data = validated_data.pop("categories", [])
 
         with transaction.atomic():
-            one_time_event = OneTimeEvent.objects.create(**validated_data)
+            event = self.Meta.model.objects.create(**validated_data)
 
             event_images = [
-                EventImage(event=one_time_event, image=image_data)
-                for image_data in images_data
+                EventImage(event=event, image=image_data) for image_data in images_data
             ]
             EventImage.objects.bulk_create(event_images)
 
             categories = []
             for category_data in categories_data:
-                print(category_data)
                 categories.append(Category.objects.get(title=category_data))
             event_categories = [
-                EventCategory(event=one_time_event, category=category_data)
+                EventCategory(event=event, category=category_data)
                 for category_data in categories
             ]
             EventCategory.objects.bulk_create(event_categories)
@@ -313,12 +319,12 @@ class OneTimeEventCreateSerializer(serializers.ModelSerializer):
                 promotions.append(PromotionType.objects.get(title=promotion_data))
 
             event_promotions = [
-                EventPromotion(event=one_time_event, promotion=promotion_data)
+                EventPromotion(event=event, promotion=promotion_data)
                 for promotion_data in promotions
             ]
             EventPromotion.objects.bulk_create(event_promotions)
 
-            return one_time_event
+            return event
 
     def to_representation(self, instance):
         repr = super().to_representation(instance)
@@ -333,10 +339,77 @@ class OneTimeEventCreateSerializer(serializers.ModelSerializer):
         ]
         return repr
 
-    @staticmethod
-    def get_start_time(obj) -> int:
-        return obj.start_time.strftime("%H:%M")
 
-    @staticmethod
-    def get_end_time(obj) -> int:
-        return obj.end_time.strftime("%H:%M")
+class OneTimeEventCreateSerializer(EventCreateSerializer):
+    start_time = UnixTimestampField()
+    end_time = UnixTimestampField()
+
+    class Meta:
+        model = OneTimeEvent
+        fields = (
+            "id",
+            "title",
+            "description",
+            "price",
+            "location",
+            "entry",
+            "start_time",
+            "end_time",
+            "organization",
+            "images",
+            "categories",
+            "promotions",
+        )
+
+
+class RegularEventCreateSerializer(EventCreateSerializer):
+    start_time = serializers.TimeField()
+    end_time = serializers.TimeField()
+    occurrence_days = serializers.ListField(
+        child=serializers.CharField(default="monday"), write_only=True
+    )
+
+    class Meta:
+        model = RegularEvent
+        fields = (
+            "id",
+            "title",
+            "description",
+            "price",
+            "location",
+            "entry",
+            "start_time",
+            "end_time",
+            "organization",
+            "images",
+            "categories",
+            "promotions",
+            "occurrence_days",
+        )
+
+    def create(self, validated_data):
+        validated_days = {
+            "monday": False,
+            "tuesday": False,
+            "wednesday": False,
+            "thursday": False,
+            "friday": False,
+            "saturday": False,
+            "sunday": False,
+        }
+
+        for key in validated_data["occurrence_days"][0].split(","):
+            validated_days[key] = True
+
+        occurrence_days, created = OccurrenceDays.objects.get_or_create(
+            **validated_days
+        )
+        validated_data["occurrence_days"] = occurrence_days
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        print(instance.occurrence_days)
+        repr = super().to_representation(instance)
+
+        repr["occurrence_days"] = str(instance.occurrence_days).split(", ")
+        return repr
