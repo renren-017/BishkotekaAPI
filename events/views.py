@@ -35,7 +35,8 @@ from events.serializers import (
     RegularEventCreateSerializer,
 )
 from users.models import Organization
-from utils.db.queries import get_events
+from utils.db.queries import get_events, get_categories
+
 
 
 class EventAPIView(APIView):
@@ -69,19 +70,54 @@ class OneTimeEventAPIView(EventAPIView):
     serializer_class = OneTimeEventSerializer
     queryset = OneTimeEvent.objects.filter(moderation_status="модерация пройдена")
 
+    @extend_schema(
+        responses=serializer_class(many=True),
+        parameters=[
+            OpenApiParameter(name="limit", type=int),
+            OpenApiParameter(name="offset", type=int),
+            OpenApiParameter(name="keyword", type=str),
+            OpenApiParameter(name="category", type=int),
+            OpenApiParameter(name="start_time", type=int),
+        ],
+    )
+    def get(self, request):
+        self.check_permissions(request)
+        paginator = self.pagination_class()
+        search_keyword = request.query_params.get("keyword")
+        category = request.query_params.get("category")
+        start_time = request.query_params.get("start_time")
+
+        events = get_events(
+            category=category,
+            keyword=search_keyword,
+            start_time=start_time,
+            type=self.model,
+        )
+        result_page = paginator.paginate_queryset(queryset=events, request=request)
+        serializer = self.serializer_class(result_page, many=True)
+        response = paginator.get_paginated_response(serializer.data)
+        return Response(response.data, status=status.HTTP_200_OK)
+
 
 class RegularEventAPIView(EventAPIView):
     serializer_class = RegularEventSerializer
     queryset = RegularEvent.objects.filter(moderation_status="модерация пройдена")
+    model = RegularEvent
 
 
 class CategoryAPIView(APIView):
     serializer_class = CategorySerializer
     model = Category
 
-    @extend_schema(responses=CategorySerializer(many=True))
+    @extend_schema(
+        responses=CategorySerializer(many=True),
+        parameters=[
+            OpenApiParameter(name="is_not_empty", type=bool),
+        ],
+    )
     def get(self, request):
-        categories = Category.objects.all()
+        is_not_empty = request.query_params.get("is_not_empty")
+        categories = get_categories(is_not_empty)
         serializer = self.serializer_class(data=categories, many=True)
         if serializer.is_valid():
             return Response(serializer.data, status.HTTP_400_BAD_REQUEST)

@@ -16,19 +16,24 @@ from drf_spectacular.utils import extend_schema
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from events.permissions import IsOwnerOrDenied
 from users.models import Customer, Organization
-from users.serializers import (
-    CustomerSignUpSerializer,
-    OrganizationSignUpSerializer,
-    EmailVerificationSerializer,
-    CustomerSerializer,
-    OrganizationSerializer,
-    CustomerTokenObtainPairSerializer,
-    OrganizationTokenObtainPairSerializer,
-    OrganizationCreatedSerializer,
-    CustomerCreatedSerializer,
-    PasswordResetConfirmSerializer,
+
+from users.serializers.passwords import (
     PasswordResetSerializer,
+    PasswordResetConfirmSerializer,
+)
+from users.serializers.organizations import (
+    OrganizationSerializer,
+    OrganizationCreatedSerializer,
+    OrganizationSignUpSerializer,
+)
+from users.serializers.users import (
+    CustomerSerializer,
+    CustomerCreatedSerializer,
+    CustomerSignUpSerializer,
+    EmailVerificationSerializer,
+    CustomerTokenObtainPairSerializer,
 )
 from config import settings
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
@@ -48,8 +53,6 @@ class CustomerSignUpView(APIView):
                 {
                     "email": customer.user.email,
                     "username": customer.username,
-                    "first_name": customer.first_name,
-                    "last_name": customer.last_name,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -71,6 +74,7 @@ class OrganizationSignUpView(APIView):
                 {
                     "user": organization.user.email,
                     "organization_name": organization.name,
+                    "organization_id": organization.id,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -155,19 +159,19 @@ class CustomerProfileView(APIView):
         return Response(serializer.data)
 
 
-class OrganizationProfileView(APIView):
+class OrganizationProfileView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
+    serializer_class = OrganizationSerializer
+    pagination_class = None
 
-    @extend_schema(responses=OrganizationSerializer)
-    def get(self, request):
-        self.check_permissions(request)
-        try:
-            organizations = Organization.objects.filter(user=request.user)
-        except Organization.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+    def get_queryset(self):
+        return Organization.objects.filter(user=self.request.user)
 
-        serializer = OrganizationSerializer(organizations, many=True)
-        return Response(serializer.data)
+
+class OrganizationProfileDetailView(generics.RetrieveAPIView):
+    serializer_class = OrganizationSerializer
+    lookup_url_kwarg = "pk"
+    queryset = Organization.objects.all()
 
 
 class CustomerTokenObtainPairView(TokenObtainPairView):
@@ -175,25 +179,6 @@ class CustomerTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         if "username" in request.data:
             request_serializer = CustomerTokenObtainPairSerializer(data=request.data)
-        else:
-            return Response(
-                {"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if request_serializer.is_valid():
-            token_data = request_serializer.validated_data
-            return Response(token_data, status=status.HTTP_200_OK)
-
-        return Response(request_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class OrganizationTokenObtainPairView(TokenObtainPairView):
-    @extend_schema(request=OrganizationTokenObtainPairSerializer)
-    def post(self, request, *args, **kwargs):
-        if "name" in request.data:
-            request_serializer = OrganizationTokenObtainPairSerializer(
-                data=request.data
-            )
         else:
             return Response(
                 {"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST
