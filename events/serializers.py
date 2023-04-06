@@ -32,12 +32,12 @@ class UnixTimestampField(serializers.Field, ABC):
 
 
 class EventCommentSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    username = serializers.SerializerMethodField()
     event = serializers.StringRelatedField()
 
     class Meta:
         model = EventComment
-        fields = ("user", "text", "event")
+        fields = ("username", "text", "event")
 
     def create(self, validated_data):
         if validated_data["event"].moderation_status != "модерация пройдена":
@@ -49,13 +49,21 @@ class EventCommentSerializer(serializers.ModelSerializer):
             )
         return super().create(validated_data)
 
+    @staticmethod
+    def get_username(obj):
+        return obj.user.customer.username
+
 
 class EventCommentInlineSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    username = serializers.SerializerMethodField()
 
     class Meta:
         model = EventComment
-        fields = ("user", "text")
+        fields = ("username", "text")
+
+    @staticmethod
+    def get_username(obj):
+        return obj.user.customer.username
 
 
 class EventInterestSerializer(serializers.ModelSerializer):
@@ -73,27 +81,37 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class EventCategorySerializer(serializers.ModelSerializer):
-    category = serializers.SlugRelatedField(
-        queryset=Category.objects.all(), slug_field="title"
-    )
+    id = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_id(obj) -> int:
+        return obj.category.id
 
     class Meta:
         model = EventCategory
-        fields = ("category",)
+        fields = ("id",)
 
-    # def to_representation(self, instance):
-    #     category = instance.category
-    #     return {"title": category.title}
+    def to_representation(self, instance):
+        repr = super().to_representation(instance)
+        repr["title"] = instance.category.title
+        return repr
 
 
 class EventPromotionSerializer(serializers.ModelSerializer):
-    promotion = serializers.SlugRelatedField(
-        queryset=PromotionType.objects.all(), slug_field="title"
-    )
+    id = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_id(obj) -> int:
+        return obj.promotion.id
 
     class Meta:
         model = EventPromotion
-        fields = ("promotion",)
+        fields = ("id",)
+
+    def to_representation(self, instance):
+        repr = super().to_representation(instance)
+        repr["title"] = instance.promotion.title
+        return repr
 
 
 class OneTimeEventSerializer(serializers.ModelSerializer):
@@ -102,21 +120,15 @@ class OneTimeEventSerializer(serializers.ModelSerializer):
     promotions = EventPromotionSerializer(many=True, read_only=True)
     organization = serializers.StringRelatedField()
     start_time = UnixTimestampField()
-    end_time = UnixTimestampField()
 
     class Meta:
         model = OneTimeEvent
         fields = (
             "id",
-            "moderation_status",
             "title",
-            "description",
-            "price",
             "organization",
             "location",
-            "entry",
             "start_time",
-            "end_time",
             "categories",
             "interested",
             "promotions",
@@ -136,7 +148,6 @@ class OneTimeEventDetailSerializer(serializers.ModelSerializer):
         model = OneTimeEvent
         fields = (
             "id",
-            "moderation_status",
             "title",
             "description",
             "price",
@@ -159,22 +170,16 @@ class RegularEventSerializer(serializers.ModelSerializer):
     organization = serializers.StringRelatedField()
     occurrence_days = serializers.StringRelatedField()
     start_time = serializers.SerializerMethodField()
-    end_time = serializers.SerializerMethodField()
 
     class Meta:
         model = RegularEvent
         fields = (
             "id",
-            "moderation_status",
             "title",
-            "description",
-            "price",
             "organization",
             "location",
-            "entry",
             "occurrence_days",
             "start_time",
-            "end_time",
             "categories",
             "interested",
             "promotions",
@@ -183,10 +188,6 @@ class RegularEventSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_start_time(obj):
         return obj.start_time.strftime("%H:%M")
-
-    @staticmethod
-    def get_end_time(obj):
-        return obj.end_time.strftime("%H:%M")
 
 
 class RegularEventDetailSerializer(serializers.ModelSerializer):
@@ -203,7 +204,6 @@ class RegularEventDetailSerializer(serializers.ModelSerializer):
         model = RegularEvent
         fields = (
             "id",
-            "moderation_status",
             "title",
             "description",
             "price",
@@ -413,3 +413,6 @@ class RegularEventCreateSerializer(EventCreateSerializer):
 
         repr["occurrence_days"] = str(instance.occurrence_days).split(", ")
         return repr
+
+
+# class EventInlineSerializer(serializers.Serializer):
