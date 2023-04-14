@@ -14,7 +14,9 @@ DEBUG = os.getenv("DEBUG")
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    # material admin
+    "material",
+    "material.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -159,3 +161,11 @@ if not DEBUG:
     AWS_S3_CUSTOM_DOMAIN = "%s.s3.amazoneaws.com" % AWS_STORAGE_BUCKET_NAME
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+
+LOGIN_REDIRECT_URL = "/"
+
+MATERIAL_ADMIN_SITE = {
+    "HEADER": "Admin Panel",
+    "TITLE": "Bishkoteka Admin",
+    "SHOW_THEMES": True,
+}

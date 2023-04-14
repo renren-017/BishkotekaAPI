@@ -1,16 +1,17 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 
-from users.views import (
+from users.views.customers import (
     CustomerSignUpView,
-    OrganizationSignUpView,
-    SendVerificationEmailView,
-    VerifyEmailView,
-    CustomerProfileView,
-    OrganizationProfileView,
-    CustomerTokenObtainPairView,
-    PasswordResetConfirmView,
     PasswordResetView,
+    PasswordResetConfirmView,
+    CustomerTokenObtainPairView,
+    CustomerProfileView,
+)
+from users.views.following import FollowingOrganizationView, FollowingView
+from users.views.organizations import (
+    OrganizationSignUpView,
+    OrganizationProfileView,
     OrganizationProfileDetailView,
 )
 
@@ -37,15 +38,29 @@ urlpatterns = [
         name="customer-token-obtain",
     ),
     path("users/login/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
-    # path("profile/customer/", CustomerProfileView.as_view(), name="customer-profile"),
     path(
-        "profile/organizations/",
+        "profile/customer/<int:pk>/",
+        CustomerProfileView.as_view(),
+        name="customer-profile",
+    ),
+    path(
+        "profile/customer/<int:pk>/organizations/",
         OrganizationProfileView.as_view(),
         name="organization-profile",
     ),
     path(
-        "profile/organization/<int:pk>",
+        "profile/organization/<int:pk>/",
         OrganizationProfileDetailView.as_view(),
         name="organization-profile",
+    ),
+    path(
+        "accounts/organization/<int:pk>/follow/",
+        FollowingOrganizationView.as_view(),
+        name="organization-follow",
+    ),
+    path(
+        "accounts/customer/<int:pk>/follow/",
+        FollowingView.as_view(),
+        name="customer-follow",
     ),
 ]

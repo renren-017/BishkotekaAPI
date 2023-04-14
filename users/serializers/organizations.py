@@ -1,6 +1,10 @@
+from typing import List, Dict
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from events.models import OneTimeEvent, RegularEvent
+from events.serializers import RegularEventProfileSerializer, OneTimeEventProfileSerializer
 from users.models import Organization
 
 
@@ -18,11 +22,62 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "address",
             "phone_number",
             "insta_link",
+            "following_count"
         )
 
     @staticmethod
     def get_user_id(obj) -> int:
         return obj.user.id
+
+
+class OrganizationProfileSerializer(OrganizationSerializer):
+    events = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Organization
+        fields = (
+            "id",
+            "user_id",
+            "name",
+            "type",
+            "description",
+            "address",
+            "phone_number",
+            "insta_link",
+            "events",
+            "following_count"
+        )
+
+    def map_event(self, event, request):
+        instance_types = {
+            "onetimeevent": (OneTimeEvent, OneTimeEventProfileSerializer),
+            "regularevent": (RegularEvent, RegularEventProfileSerializer),
+        }
+
+        for child_type in instance_types:
+            if not hasattr(event, child_type):
+                continue
+            model, serializer = instance_types[child_type]
+            obj = model.objects.filter(pk=event.pk)
+
+            if not obj:
+                return
+
+            data = serializer(obj.first()).data
+            data["event_type"] = child_type
+            return data
+        return
+
+    def get_events(self, org) -> List[Dict]:
+        request = self.context.get('request')
+        elements = org.events.all()
+        events = []
+        for element in elements:
+            event = self.map_event(element, request)
+            if not event:
+                continue
+            events.append(event)
+        return events
 
 
 class OrganizationDetailSerializer(OrganizationSerializer):

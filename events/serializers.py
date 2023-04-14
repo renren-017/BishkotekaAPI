@@ -135,6 +135,22 @@ class OneTimeEventSerializer(serializers.ModelSerializer):
         )
 
 
+class OneTimeEventProfileSerializer(OneTimeEventSerializer):
+    class Meta:
+        model = OneTimeEvent
+        fields = (
+            "id",
+            "title",
+            "organization",
+            "location",
+            "start_time",
+            "categories",
+            "interested",
+            "promotions",
+            "moderation_status"
+        )
+
+
 class OneTimeEventDetailSerializer(serializers.ModelSerializer):
     categories = EventCategorySerializer(many=True, read_only=True)
     comments = EventCommentInlineSerializer(many=True, read_only=True)
@@ -188,6 +204,23 @@ class RegularEventSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_start_time(obj):
         return obj.start_time.strftime("%H:%M")
+
+
+class RegularEventProfileSerializer(RegularEventSerializer):
+    class Meta:
+        model = RegularEvent
+        fields = (
+            "id",
+            "title",
+            "organization",
+            "location",
+            "occurrence_days",
+            "start_time",
+            "categories",
+            "interested",
+            "promotions",
+            "moderation_status"
+        )
 
 
 class RegularEventDetailSerializer(serializers.ModelSerializer):
