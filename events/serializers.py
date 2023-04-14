@@ -150,9 +150,13 @@ class OneTimeEventDetailSerializer(serializers.ModelSerializer):
         fields = (
             "id",    
             "title",
+	    "description",
+	    "price",
             "organization",
             "location",
+            "entry",
             "start_time",
+	    "end_time",
             "categories",
             "comments",
             "interested",
