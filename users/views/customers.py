@@ -4,39 +4,33 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
+from django.http import Http404
 from django.utils.html import strip_tags
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
-from rest_framework import status, generics
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema
 from django.contrib.auth import get_user_model
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework import status, generics
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from events.permissions import IsOwnerOrDenied
-from users.models import Customer, Organization
-
+from config import settings
+from users.models import Customer
+from users.permissions import IsProfileOwnerOrReadOnly
 from users.serializers.passwords import (
     PasswordResetSerializer,
     PasswordResetConfirmSerializer,
 )
-from users.serializers.organizations import (
-    OrganizationSerializer,
-    OrganizationCreatedSerializer,
-    OrganizationSignUpSerializer,
-)
 from users.serializers.users import (
-    CustomerSerializer,
-    CustomerCreatedSerializer,
     CustomerSignUpSerializer,
+    CustomerCreatedSerializer,
     EmailVerificationSerializer,
-    CustomerTokenObtainPairSerializer,
+    CustomerSerializer,
+    CustomerTokenObtainPairSerializer, CustomerProfileSerializer,
 )
-from config import settings
-from drf_spectacular.utils import OpenApiParameter, OpenApiTypes
+
 
 User = get_user_model()
 
@@ -53,28 +47,6 @@ class CustomerSignUpView(APIView):
                 {
                     "email": customer.user.email,
                     "username": customer.username,
-                },
-                status=status.HTTP_201_CREATED,
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class OrganizationSignUpView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    @extend_schema(
-        request=OrganizationSignUpSerializer, responses=OrganizationCreatedSerializer
-    )
-    def post(self, request):
-        self.check_permissions(request)
-        serializer = OrganizationSignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            organization = serializer.save(user_id=request.user.id)
-            return Response(
-                {
-                    "user": organization.user.email,
-                    "organization_name": organization.name,
-                    "organization_id": organization.id,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -147,31 +119,30 @@ class VerifyEmailView(APIView):
         return Response({"Details": "Email verified."})
 
 
-class CustomerProfileView(APIView):
-    @extend_schema(responses=CustomerSerializer)
-    def get(self, request):
-        try:
-            customer = Customer.objects.get(pk=request.user.id)
-        except Customer.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+class CustomerProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = CustomerProfileSerializer
+    permission_classes = [IsProfileOwnerOrReadOnly]
 
-        serializer = CustomerSerializer(customer)
+    def get_object(self):
+        customer = Customer.objects.filter(user=self.kwargs['pk'])
+
+        if not customer:
+            raise Http404("No active customer profile with this pk found")
+        return customer.first()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-
-class OrganizationProfileView(generics.ListAPIView):
-    permission_classes = (IsAuthenticated,)
-    serializer_class = OrganizationSerializer
-    pagination_class = None
-
-    def get_queryset(self):
-        return Organization.objects.filter(user=self.request.user)
-
-
-class OrganizationProfileDetailView(generics.RetrieveAPIView):
-    serializer_class = OrganizationSerializer
-    lookup_url_kwarg = "pk"
-    queryset = Organization.objects.all()
+    def update(self, request, *args, **kwargs):
+        self.check_object_permissions(request, self.get_object())
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
 
 class CustomerTokenObtainPairView(TokenObtainPairView):

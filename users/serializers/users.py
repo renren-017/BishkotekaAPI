@@ -46,6 +46,20 @@ class CustomerSerializer(serializers.ModelSerializer):
         return CategorySerializer(categories, many=True).data
 
 
+class CustomerProfileSerializer(CustomerSerializer):
+
+    class Meta:
+        model = Customer
+        fields = (
+            "id",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "following_count"
+        )
+
+
 class CustomerCreatedSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
 

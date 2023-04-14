@@ -48,6 +48,11 @@ class Customer(models.Model):
 
         return Category.objects.filter(id__in=self.interests_ids)
 
+    @property
+    def following_count(self) -> int:
+        followers = Following.objects.filter(following=self.pk)
+        return followers.count() if followers else 0
+
 
 class Organization(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -61,6 +66,11 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def following_count(self) -> int:
+        followers = FollowingOrganization.objects.filter(following=self.pk)
+        return followers.count() if followers else 0
 
 
 class Following(models.Model):
