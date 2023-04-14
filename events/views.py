@@ -38,6 +38,7 @@ from users.models import Organization
 from utils.db.queries import get_events, get_categories
 
 
+
 class EventAPIView(APIView):
     serializer_class = OneTimeEventSerializer
     pagination_class = LimitOffsetPagination

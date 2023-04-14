@@ -62,5 +62,5 @@ urlpatterns = [
         "accounts/customer/<int:pk>/follow/",
         FollowingView.as_view(),
         name="customer-follow",
-    ),
+    )
 ]

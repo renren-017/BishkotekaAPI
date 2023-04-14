@@ -66,6 +66,7 @@ class EventCommentInlineSerializer(serializers.ModelSerializer):
         return obj.user.customer.username
 
 
+
 class EventInterestSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
 
@@ -132,7 +133,7 @@ class OneTimeEventSerializer(serializers.ModelSerializer):
             "categories",
             "interested",
             "promotions",
-        )
+    )
 
 
 class OneTimeEventProfileSerializer(OneTimeEventSerializer):
@@ -163,15 +164,15 @@ class OneTimeEventDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OneTimeEvent
         fields = (
-            "id",
+            "id",    
             "title",
-            "description",
-            "price",
+	    "description",
+	    "price",
             "organization",
             "location",
             "entry",
             "start_time",
-            "end_time",
+	    "end_time",
             "categories",
             "comments",
             "interested",
@@ -447,5 +448,3 @@ class RegularEventCreateSerializer(EventCreateSerializer):
         repr["occurrence_days"] = str(instance.occurrence_days).split(", ")
         return repr
 
-
-# class EventInlineSerializer(serializers.Serializer):
