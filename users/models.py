@@ -62,7 +62,7 @@ class Organization(models.Model):
     type = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     address = models.CharField(max_length=200, blank=True, null=True)
-    insta_link = models.URLField(blank=True, null=True)
+    insta_link = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
         return self.name

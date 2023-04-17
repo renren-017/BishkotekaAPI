@@ -2,7 +2,6 @@ from rest_framework.permissions import BasePermission
 
 
 class IsOrganizationOwnerOrReadOnly(BasePermission):
-
     def has_object_permission(self, request, view, obj):
         if request.method == "GET":
             return True
@@ -11,16 +10,14 @@ class IsOrganizationOwnerOrReadOnly(BasePermission):
 
 
 class IsProfileOwnerOrReadOnly(BasePermission):
-
     def has_object_permission(self, request, view, obj):
         if request.method == "GET":
             return True
-        return view.kwargs['pk'] == request.user
+        return view.kwargs["pk"] == request.user
 
 
 class IsProfileOwner(BasePermission):
-
     def has_permission(self, request, view):
         if not request.user:
             return False
-        return view.kwargs['pk'] == request.user.pk
+        return view.kwargs["pk"] == request.user.pk

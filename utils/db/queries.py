@@ -4,6 +4,7 @@ from django.db.models import Model
 from datetime import datetime
 
 from events.models import Event
+from users.models import Organization, Customer
 
 
 def get_events(category, keyword, start_time: int = None, type: Event = OneTimeEvent):
@@ -33,7 +34,7 @@ def get_events(category, keyword, start_time: int = None, type: Event = OneTimeE
 
     cursor.execute(f"SELECT id FROM events_event {filter_ids_query} {search_query}")
     events_ids = [objects[0] for objects in cursor.fetchall()]
-    return type.objects.filter(id__in=events_ids)
+    return type.objects.filter(id__in=events_ids).order_by("-start_time")
 
 
 def get_categories(is_not_empty: bool = False):
@@ -47,3 +48,25 @@ def get_categories(is_not_empty: bool = False):
     cursor.execute(f"SELECT id FROM events_category {search_query}")
     categories_ids = [objects[0] for objects in cursor.fetchall()]
     return Category.objects.filter(id__in=categories_ids)
+
+
+def get_organizations(keyword):
+    cursor = connection.cursor()
+
+    search_query = f"WHERE name ILIKE '%{keyword}%'" if keyword else ""
+
+    cursor.execute(f"SELECT id FROM {Organization.objects.model._meta.db_table} {search_query}")
+    objects_ids = {objects[0] for objects in cursor.fetchall()}
+
+    return Organization.objects.filter(id__in=objects_ids)
+
+
+def get_customers(keyword):
+    cursor = connection.cursor()
+
+    search_query = f"WHERE username ILIKE '%{keyword}%'" if keyword else ""
+
+    cursor.execute(f"SELECT user_id FROM {Customer.objects.model._meta.db_table} {search_query}")
+    objects_ids = {objects[0] for objects in cursor.fetchall()}
+
+    return Customer.objects.filter(user_id__in=objects_ids)

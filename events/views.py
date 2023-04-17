@@ -21,7 +21,7 @@ from events.models import (
     EventPromotion,
     EventCategory,
     EventImage,
-    Event,
+    Event, EventInterest,
 )
 from events.permissions import IsOwnerOrDenied
 from events.serializers import (
@@ -36,7 +36,6 @@ from events.serializers import (
 )
 from users.models import Organization
 from utils.db.queries import get_events, get_categories
-
 
 
 class EventAPIView(APIView):
@@ -73,8 +72,6 @@ class OneTimeEventAPIView(EventAPIView):
     @extend_schema(
         responses=serializer_class(many=True),
         parameters=[
-            OpenApiParameter(name="limit", type=int),
-            OpenApiParameter(name="offset", type=int),
             OpenApiParameter(name="keyword", type=str),
             OpenApiParameter(name="category", type=int),
             OpenApiParameter(name="start_time", type=int),
@@ -191,3 +188,45 @@ class RegularEventCreateView(EventCreateView):
     @extend_schema(request=RegularEventCreateSerializer)
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+class EventFavouriteView(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def post(self, request, pk):
+        self.check_permissions(request)
+        user = request.user
+
+        if not pk:
+            return Response(
+                {"Detail": "interest_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        event = Event.objects.filter(id=pk)
+        if not event:
+            return Response(
+                {
+                    "Detail": "The event with the given event_id does not exist."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if EventInterest.objects.filter(
+            user=user, event=event.first()
+        ).exists():
+            EventInterest.objects.filter(
+                user=user, event=event.first()
+            ).delete()
+            return Response(
+                {"Detail": "You have unstarred this event."},
+                status=status.HTTP_200_OK,
+            )
+
+        EventInterest.objects.create(
+            user=user, event=event.first()
+        )
+        return Response(
+            {"Detail": "You have starred event."},
+            status=status.HTTP_201_CREATED,
+        )

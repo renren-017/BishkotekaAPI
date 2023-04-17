@@ -14,45 +14,48 @@ from events.models import (
 from django import forms
 
 
-# class OccurrenceDaysInline(admin.TabularInline):
-#     model = OccurrenceDays
-#     max_num = 1
-#     can_delete = False
-#
-#
-# class CategoryInline(admin.TabularInline):
-#     model = EventCategory
-#
-#
-# class EventAdminForm(forms.ModelForm):
-#     categories = forms.ModelMultipleChoiceField(
-#         queryset=Category.objects.all(),
-#         required=False,
-#         widget=admin.widgets.FilteredSelectMultiple('categories', False),
-#     )
-#
-#     class Meta:
-#         model = Event
-#         fields = '__all__'
-#
-#
-# class EventAdmin(admin.ModelAdmin):
-#     form = EventAdminForm
-#     inlines = [OccurrenceDaysInline, CategoryInline]
-#
-#     def save_model(self, request, obj, form, change):
-#         super().save_model(request, obj, form, change)
-#         obj.categories.clear()
-#         for category in form.cleaned_data['categories']:
-#             EventCategory.objects.create(event=obj, category=category)
+@admin.register(OccurrenceDays)
+class OccurrenceDaysAdmin(admin.ModelAdmin):
+    icon_name = "event_available"
 
-admin.site.register(OccurrenceDays)
-admin.site.register(Category)
-admin.site.register(PromotionType)
-admin.site.register(Event)
-admin.site.register(OneTimeEvent)
-admin.site.register(RegularEvent)
-admin.site.register(EventPromotion)
-admin.site.register(EventInterest)
-admin.site.register(EventComment)
-admin.site.register(EventCategory)
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    icon_name = "event"
+    # list_display = ("user", "username", "first_name", "last_name", "following_count")
+
+
+@admin.register(OneTimeEvent)
+class OneTimeEventAdmin(admin.ModelAdmin):
+    icon_name = "radio_button_checked"
+    # list_display = ("user", "username", "first_name", "last_name", "following_count")
+
+
+@admin.register(RegularEvent)
+class RegularEventAdmin(admin.ModelAdmin):
+    icon_name = "query_builder"
+    # list_display = ("user", "username", "first_name", "last_name", "following_count")
+
+
+@admin.register(EventPromotion)
+class EventPromotionAdmin(admin.ModelAdmin):
+    icon_name = "trending_up"
+    # list_display = ("user", "username", "first_name", "last_name", "following_count")
+
+
+@admin.register(EventInterest)
+class EventInterestAdmin(admin.ModelAdmin):
+    icon_name = "thumb_up"
+    # list_display = ("user", "username", "first_name", "last_name", "following_count")
+
+
+@admin.register(EventComment)
+class EventCommentAdmin(admin.ModelAdmin):
+    icon_name = "comment"
+    # list_display = ("user", "username", "first_name", "last_name", "following_count")
+
+
+@admin.register(EventCategory)
+class EventCategoryAdmin(admin.ModelAdmin):
+    icon_name = "widgets"
+    # list_display = ("user", "username", "first_name", "last_name", "following_count")

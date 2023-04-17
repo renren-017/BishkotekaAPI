@@ -47,7 +47,6 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 
 class CustomerProfileSerializer(CustomerSerializer):
-
     class Meta:
         model = Customer
         fields = (
@@ -56,7 +55,7 @@ class CustomerProfileSerializer(CustomerSerializer):
             "username",
             "first_name",
             "last_name",
-            "following_count"
+            "following_count",
         )
 
 
