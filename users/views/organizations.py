@@ -1,17 +1,23 @@
 from django.contrib.auth import get_user_model
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from users.models import Organization
-from users.permissions import IsOrganizationOwnerOrReadOnly, IsProfileOwnerOrReadOnly, IsProfileOwner
+from users.permissions import (
+    IsOrganizationOwnerOrReadOnly,
+    IsProfileOwnerOrReadOnly,
+    IsProfileOwner,
+)
 from users.serializers.organizations import (
     OrganizationSignUpSerializer,
     OrganizationCreatedSerializer,
-    OrganizationSerializer, OrganizationProfileSerializer,
+    OrganizationSerializer,
+    OrganizationProfileSerializer, OrganizationDetailSerializer,
 )
+from utils.db.queries import get_organizations
 
 User = get_user_model()
 
@@ -44,11 +50,29 @@ class OrganizationProfileView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return Organization.objects.filter(user=self.kwargs.get('pk'))
+        return Organization.objects.filter(user=self.kwargs.get("pk"))
+
+
+class OrganizationListView(generics.ListAPIView):
+    serializer_class = OrganizationProfileSerializer
+
+    @extend_schema(
+        responses=serializer_class(many=True),
+        parameters=[
+            OpenApiParameter(name="keyword", type=str)
+        ]
+    )
+    def get(self, request):
+        return super().get(request)
+
+    def get_queryset(self):
+        return get_organizations(
+            keyword=self.request.query_params.get("keyword")
+        )
 
 
 class OrganizationProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsOrganizationOwnerOrReadOnly,)
-    serializer_class = OrganizationSerializer
+    serializer_class = OrganizationDetailSerializer
     lookup_url_kwarg = "pk"
     queryset = Organization.objects.all()

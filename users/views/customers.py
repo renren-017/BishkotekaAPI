@@ -28,9 +28,10 @@ from users.serializers.users import (
     CustomerCreatedSerializer,
     EmailVerificationSerializer,
     CustomerSerializer,
-    CustomerTokenObtainPairSerializer, CustomerProfileSerializer,
+    CustomerTokenObtainPairSerializer,
+    CustomerProfileSerializer,
 )
-
+from utils.db.queries import get_customers
 
 User = get_user_model()
 
@@ -124,7 +125,7 @@ class CustomerProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsProfileOwnerOrReadOnly]
 
     def get_object(self):
-        customer = Customer.objects.filter(user=self.kwargs['pk'])
+        customer = Customer.objects.filter(user=self.kwargs["pk"])
 
         if not customer:
             raise Http404("No active customer profile with this pk found")
@@ -143,6 +144,24 @@ class CustomerProfileView(generics.RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+
+class CustomerListView(generics.ListAPIView):
+    serializer_class = CustomerProfileSerializer
+
+    @extend_schema(
+        responses=serializer_class(many=True),
+        parameters=[
+            OpenApiParameter(name="keyword", type=str)
+        ]
+    )
+    def get(self, request):
+        return super().get(request)
+
+    def get_queryset(self):
+        return get_customers(
+            keyword=self.request.query_params.get("keyword")
+        )
 
 
 class CustomerTokenObtainPairView(TokenObtainPairView):

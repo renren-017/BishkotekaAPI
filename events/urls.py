@@ -7,7 +7,7 @@ from events.views import (
     OneTimeEventDetailView,
     RegularEventDetailView,
     OneTimeEventCreateView,
-    RegularEventCreateView,
+    RegularEventCreateView, EventFavouriteView,
 )
 
 urlpatterns = [
@@ -34,5 +34,11 @@ urlpatterns = [
     ),
     path(
         "organization/<int:pk>/events/regular/create/", RegularEventCreateView.as_view()
+    ),
+
+    path(
+        "events/<int:pk>/add-to-favourite/",
+        EventFavouriteView.as_view(),
+        name="event-add-to-favourite",
     ),
 ]

@@ -6,13 +6,13 @@ from users.views.customers import (
     PasswordResetView,
     PasswordResetConfirmView,
     CustomerTokenObtainPairView,
-    CustomerProfileView,
+    CustomerProfileView, CustomerListView,
 )
 from users.views.following import FollowingOrganizationView, FollowingView
 from users.views.organizations import (
     OrganizationSignUpView,
     OrganizationProfileView,
-    OrganizationProfileDetailView,
+    OrganizationProfileDetailView, OrganizationListView,
 )
 
 urlpatterns = [
@@ -54,13 +54,23 @@ urlpatterns = [
         name="organization-profile",
     ),
     path(
+        "accounts/organizations/",
+        OrganizationListView.as_view(),
+        name="organization-list",
+    ),
+    path(
         "accounts/organization/<int:pk>/follow/",
         FollowingOrganizationView.as_view(),
         name="organization-follow",
     ),
     path(
+        "accounts/users/",
+        CustomerListView.as_view(),
+        name="customer-list",
+    ),
+    path(
         "accounts/customer/<int:pk>/follow/",
         FollowingView.as_view(),
         name="customer-follow",
-    )
+    ),
 ]

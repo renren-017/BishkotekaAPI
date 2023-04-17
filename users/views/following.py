@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -10,8 +11,10 @@ User = get_user_model()
 
 
 class FollowingOrganizationView(APIView):
-    # @extend_schema(parameters=[OpenApiParameter(name="following_id", type=int)])
+    permission_classes = (IsAuthenticated, )
+
     def post(self, request, pk):
+        self.check_permissions(request)
         follower = request.user
 
         if not pk:
@@ -50,7 +53,10 @@ class FollowingOrganizationView(APIView):
 
 
 class FollowingView(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request, pk):
+        self.check_permissions(request)
         follower = request.user
 
         if not pk:

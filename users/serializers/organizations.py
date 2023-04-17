@@ -4,7 +4,10 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from events.models import OneTimeEvent, RegularEvent
-from events.serializers import RegularEventProfileSerializer, OneTimeEventProfileSerializer
+from events.serializers import (
+    RegularEventProfileSerializer,
+    OneTimeEventProfileSerializer,
+)
 from users.models import Organization
 
 
@@ -22,7 +25,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "address",
             "phone_number",
             "insta_link",
-            "following_count"
+            "following_count",
         )
 
     @staticmethod
@@ -31,7 +34,24 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 
 class OrganizationProfileSerializer(OrganizationSerializer):
-    events = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Organization
+        fields = (
+            "id",
+            "user_id",
+            "name",
+            "type",
+            "description",
+            "address",
+            "phone_number",
+            "insta_link",
+            "following_count",
+        )
+
+
+class OrganizationDetailSerializer(OrganizationSerializer):
+    events = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Organization
@@ -45,7 +65,7 @@ class OrganizationProfileSerializer(OrganizationSerializer):
             "phone_number",
             "insta_link",
             "events",
-            "following_count"
+            "following_count",
         )
 
     def map_event(self, event, request):
@@ -69,7 +89,7 @@ class OrganizationProfileSerializer(OrganizationSerializer):
         return
 
     def get_events(self, org) -> List[Dict]:
-        request = self.context.get('request')
+        request = self.context.get("request")
         elements = org.events.all()
         events = []
         for element in elements:
@@ -78,21 +98,6 @@ class OrganizationProfileSerializer(OrganizationSerializer):
                 continue
             events.append(event)
         return events
-
-
-class OrganizationDetailSerializer(OrganizationSerializer):
-    class Meta:
-        model = Organization
-        fields = (
-            "id",
-            "user_id",
-            "name",
-            "type",
-            "description",
-            "address",
-            "phone_number",
-            "insta_link",
-        )
 
 
 class OrganizationCreatedSerializer(serializers.ModelSerializer):
