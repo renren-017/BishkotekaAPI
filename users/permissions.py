@@ -13,7 +13,7 @@ class IsProfileOwnerOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method == "GET":
             return True
-        return view.kwargs["pk"] == request.user
+        return view.kwargs["pk"] == request.user.pk
 
 
 class IsProfileOwner(BasePermission):
