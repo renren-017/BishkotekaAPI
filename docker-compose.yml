@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     networks:
       - afisha_net
+
   redis:
     image: redis
     restart: always
@@ -23,6 +24,7 @@ services:
       - redisdata:/var/lib/redis/data
     networks:
       - afisha_net
+
   api:
     tty: true
     build:
@@ -30,16 +32,29 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/afisha
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
+      - static_volume:/afisha/static
     networks:
       - afisha_net
     depends_on:
       - postgres
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - static_volume:/static
+
+    depends_on:
+      - api
+    networks:
+      - afisha_net
+
 volumes:
   pgdata:
   redisdata:
+  static_volume:
+
 networks:
   afisha_net: {}
